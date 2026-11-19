@@ -1,1 +1,751 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบรายงานความปลอดภัย คปอ.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <style>
+    body { background-color: #f4f7f6; font-family: 'Sarabun', sans-serif; padding: 0 12px; }
+    .main-container { 
+      max-width: 600px; 
+      margin: 24px auto; 
+      background: white; 
+      padding: 26px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    }
+    .hidden { display: none !important; }
+    .info-banner {
+      background-color: #e9f2fa;
+      border-left: 4px solid #0d6efd;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+    .image-slot {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #dee2e6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .image-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .btn-remove-img {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(220, 53, 69, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .add-image-box {
+      width: 130px;
+      height: 130px;
+      border: 2px dashed #0d6efd;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #0d6efd;
+      background-color: #f8faff;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      padding: 10px;
+    }
+    .add-image-box:hover {
+      background-color: #e9f2fa;
+    }
+    .add-image-box .plus-icon {
+      font-size: 2rem;
+      line-height: 1;
+      font-weight: bold;
+    }
+    .custom-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 1040;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+    .custom-modal-box {
+      background: white;
+      width: 100%;
+      max-width: 560px;
+      max-height: 85vh;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    .custom-modal-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8f9fa;
+    }
+    .custom-modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .custom-modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #dee2e6;
+      text-align: right;
+      background: #f8f9fa;
+    }
+    .history-thumb {
+      width: 85px;
+      height: 85px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+    }
+  </style>
+</head>
+<body>
 
+  <!-- ================= หน้าที่ 1: ตั้งค่าการตรวจ ================= -->
+  <div class="main-container" id="page-setup">
+    <h4 class="text-center mb-4 fw-bold">ระบบรายงานความปลอดภัย คปอ.</h4>
+    
+    <div id="loading" class="text-center text-primary my-4">
+      <div class="spinner-border spinner-border-sm" role="status"></div>
+      <span> กำลังโหลดข้อมูลตั้งต้น...</span>
+    </div>
+
+    <form id="setupForm" class="hidden">
+      <div class="mb-3">
+        <label class="form-label fw-bold">เดือน</label>
+        <select id="month" class="form-select" required>
+          <option value="" selected disabled>-- เลือกเดือน --</option>
+        </select>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label fw-bold">ปี ค.ศ.</label>
+        <select id="year" class="form-select" required>
+          <option value="" selected disabled>-- เลือกปี --</option>
+        </select>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label fw-bold">ชื่อคณะ คปอ.</label>
+        <select id="inspector" class="form-select" required>
+          <option value="" selected disabled>-- เลือกชื่อผู้ตรวจ --</option>
+        </select>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label fw-bold">สถานที่ตรวจ</label>
+        <select id="location" class="form-select" required>
+          <option value="" selected disabled>-- เลือกสถานที่ --</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-primary w-100 mt-3 py-2 fw-bold" onclick="startReport()">คลิกเพื่อเริ่มรายงาน</button>
+      
+      <hr class="my-4">
+      <button type="button" class="btn btn-outline-secondary w-100 py-2 fw-bold" onclick="openExportPage()">
+        📊 สำหรับ Admin: Export รายงานประจำเดือน
+      </button>
+    </form>
+  </div>
+
+  <!-- ================= หน้าที่ 2: รายงานประเด็นที่พบ ================= -->
+  <div class="main-container hidden" id="page-report">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold m-0">รายงานความไม่สอดคล้อง</h5>
+      <span class="badge bg-primary fs-6" id="itemCounter">รายการที่ 1</span>
+    </div>
+
+    <div class="info-banner" id="setupSummary"></div>
+
+    <button type="button" class="btn btn-outline-info w-100 mb-3 fw-bold" onclick="openHistoryModal()">
+      📋 ดูรายการที่บันทึกไว้ในรอบนี้ (<span id="savedCount">0</span> รายการ)
+    </button>
+
+    <form id="reportForm">
+      <div class="mb-3">
+        <label class="form-label fw-bold">1. อัปโหลดรูปภาพประกอบ (สูงสุด 2 รูป) <span class="text-danger">*</span></label>
+        <input type="file" id="singleImageInput" class="hidden" accept="image/*" onchange="handleSingleImage(event)">
+        <div id="imageSlotsContainer" class="d-flex align-items-center gap-3 mt-1 flex-wrap"></div>
+        <div class="form-text text-muted mt-1">ต้องแนบอย่างน้อย 1 รูป (กดปุ่ม + เพื่อเพิ่มรูปที่ 2 ได้)</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">2. ประเด็นที่พบ <span class="text-danger">*</span></label>
+        <textarea id="issue" class="form-control" rows="2" placeholder="ระบุสภาพความไม่ปลอดภัยที่พบ..."></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">3. บริเวณที่พบ <span class="text-danger">*</span></label>
+        <input type="text" id="area" class="form-control" placeholder="ระบุจุดหรือบริเวณที่พบ...">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">4. ประเภทข้อบกพร่อง <span class="text-danger">*</span></label>
+        <select id="defectType" class="form-select">
+          <option value="" selected disabled>-- เลือกประเภทข้อบกพร่อง --</option>
+        </select>
+      </div>
+
+      <div class="row g-2 mt-4">
+        <div class="col-6">
+          <button type="button" class="btn btn-outline-primary w-100 py-2 fw-bold" onclick="addNextReport()">+ รายงานต่อ</button>
+        </div>
+        <div class="col-6">
+          <button type="button" class="btn btn-success w-100 py-2 fw-bold" onclick="finishReport()">จบการรายงาน</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ================= Modal แสดงประวัติรายการที่บันทึกไว้ในรอบนี้ ================= -->
+  <div id="historyModal" class="custom-modal-overlay hidden" onclick="if(event.target === this) closeHistoryModal()">
+    <div class="custom-modal-box">
+      <div class="custom-modal-header">
+        <h6 class="fw-bold m-0">📋 ประวัติรายการที่บันทึกไว้ (ยังไม่ส่ง)</h6>
+        <button type="button" class="btn-close" onclick="closeHistoryModal()" aria-label="Close"></button>
+      </div>
+      <div class="custom-modal-body" id="historyListContainer"></div>
+      <div class="custom-modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm px-4 fw-bold" onclick="closeHistoryModal()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= หน้าที่ 3: หน้าคัดกรองเพื่อ Export Report ================= -->
+  <div class="main-container hidden" id="page-export">
+    <h4 class="text-center mb-3 fw-bold">Export รายงานความปลอดภัย</h4>
+    <p class="text-muted text-center small mb-4">เลือกเงื่อนไขข้อมูลที่ต้องการออกรายงาน (เฉพาะ Admin)</p>
+
+    <form id="exportForm">
+      <div class="mb-3">
+        <label class="form-label fw-bold">เลือกเดือน</label>
+        <select id="exportMonth" class="form-select" required>
+          <option value="" selected disabled>-- เลือกเดือน --</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">เลือกปี ค.ศ.</label>
+        <select id="exportYear" class="form-select" required>
+          <option value="" selected disabled>-- เลือกปี --</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">เลือกสถานที่ตรวจ</label>
+        <select id="exportLocation" class="form-select" required>
+          <option value="" selected disabled>-- เลือกสถานที่ --</option>
+          <option value="อาคาร Non-pen">อาคาร Non-pen</option>
+          <option value="อาคาร AMK">อาคาร AMK</option>
+          <option value="อาคาร Utility Non-pen">อาคาร Utility Non-pen</option>
+          <option value="อาคาร RD">อาคาร RD</option>
+          <option value="อาคารคลังวัสดุบรรจุภัณฑ์">อาคารคลังวัสดุบรรจุภัณฑ์</option>
+        </select>
+      </div>
+
+      <div class="row g-2 mt-4">
+        <div class="col-5">
+          <button type="button" class="btn btn-secondary w-100 py-2 fw-bold" onclick="backToMain()">ย้อนกลับ</button>
+        </div>
+        <div class="col-7">
+          <button type="button" class="btn btn-warning w-100 py-2 fw-bold" onclick="promptPasswordAndExport()">🔒 กดเพื่อ Export ไฟล์</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // นำลิงก์ Web App (/exec) ที่ได้จากขั้นตอนที่ 1 มาวางแทนที่ข้อความด้านล่างนี้
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzk7ciMcVonemoVt7dfWZ4__2Zkk9b3YjLFGvBAIB0Hnr_c8o9oC1qTzG5GLHVdfH8e2g/exec';
+
+    let appData = {
+      setup: {},
+      reports: [],
+      currentImagesBase64: []
+    };
+
+    window.onload = async function() {
+      try {
+        const response = await fetch(GAS_API_URL, { method: 'GET', redirect: 'follow' });
+        const result = await response.json();
+
+        if (result.success) {
+          renderDropdowns(result.data);
+        } else {
+          throw new Error(result.message || 'ไม่สามารถดึงข้อมูลได้');
+        }
+      } catch (err) {
+        document.getElementById('loading').innerHTML = 
+          `<div class="alert alert-danger">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(err.message)}<br><small>กรุณาตรวจสอบว่านำลิงก์ /exec ล่าสุดมาใส่ใน GAS_API_URL และเปิดในแท็บ Incognito แล้วเห็น JSON</small></div>`;
+      }
+    };
+
+    function renderDropdowns(data) {
+      populateSelect('month', data.months);
+      populateSelect('year', data.years);
+      populateSelect('inspector', data.inspectors);
+      populateSelect('location', data.locations);
+      populateSelect('defectType', data.defectTypes);
+
+      populateSelect('exportMonth', data.months);
+      populateSelect('exportYear', data.years);
+
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('setupForm').classList.remove('hidden');
+    }
+
+    function populateSelect(elementId, arrayData) {
+      const select = document.getElementById(elementId);
+      arrayData.forEach(item => {
+        let option = document.createElement('option');
+        option.value = item;
+        option.text = item;
+        select.appendChild(option);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function openExportPage() {
+      document.getElementById('page-setup').classList.add('hidden');
+      document.getElementById('page-export').classList.remove('hidden');
+    }
+
+    function backToMain() {
+      document.getElementById('page-export').classList.add('hidden');
+      document.getElementById('page-setup').classList.remove('hidden');
+    }
+
+    function startReport() {
+      const month = document.getElementById('month').value;
+      const year = document.getElementById('year').value;
+      const inspector = document.getElementById('inspector').value;
+      const location = document.getElementById('location').value;
+
+      if (!month || !year || !inspector || !location) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ข้อมูลไม่ครบถ้วน',
+          text: 'กรุณาเลือกข้อมูลให้ครบทุกช่องก่อนเริ่มรายงานค่ะ',
+          confirmButtonText: 'ตกลง'
+        });
+        return;
+      }
+
+      appData.setup = { month, year, inspector, location };
+      appData.reports = [];
+      appData.currentImagesBase64 = [];
+
+      document.getElementById('setupSummary').innerHTML = 
+        `<strong>ประจำเดือน:</strong> ${escapeHtml(month)} ${escapeHtml(year)} | <strong>ผู้ตรวจ:</strong> ${escapeHtml(inspector)}<br>` +
+        `<strong>สถานที่:</strong> ${escapeHtml(location)}`;
+
+      updateItemCounter();
+      renderImageSlots();
+
+      document.getElementById('page-setup').classList.add('hidden');
+      document.getElementById('page-report').classList.remove('hidden');
+    }
+
+    function openHistoryModal() {
+      renderHistoryList();
+      document.getElementById('historyModal').classList.remove('hidden');
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.add('hidden');
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+
+      if (appData.reports.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-muted py-4">
+            <p class="mb-1 fw-bold">ยังไม่มีรายการที่บันทึกพักไว้ค่ะ</p>
+            <small>รายการจะแสดงที่นี่หลังจากที่คุณกดปุ่ม "+ รายงานต่อ"</small>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      appData.reports.forEach((item, index) => {
+        const imgsHtml = item.imagesBase64
+          .map((src, i) => `<img src="${src}" class="history-thumb" alt="รูปที่ ${i + 1}">`)
+          .join('');
+
+        html += `
+          <div class="card mb-3 border">
+            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+              <span class="fw-bold text-primary">รายการที่ ${index + 1}</span>
+              <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="deleteHistoryItem(${index})">
+                🗑️ ลบ
+              </button>
+            </div>
+            <div class="card-body py-2 px-3 small">
+              <div class="mb-1"><strong>ประเด็นที่พบ:</strong> ${escapeHtml(item.issue)}</div>
+              <div class="mb-1"><strong>บริเวณที่พบ:</strong> ${escapeHtml(item.area)}</div>
+              <div class="mb-2"><strong>ประเภทข้อบกพร่อง:</strong> <span class="badge bg-secondary">${escapeHtml(item.defectType)}</span></div>
+              <div class="d-flex gap-2 flex-wrap">${imgsHtml}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function deleteHistoryItem(index) {
+      Swal.fire({
+        icon: 'warning',
+        title: `ลบรายการที่ ${index + 1}?`,
+        text: 'ต้องการลบรายการนี้ออกจากประวัติการรายงานใช่หรือไม่?',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ลบรายการ',
+        cancelButtonText: 'ยกเลิก',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          appData.reports.splice(index, 1);
+          updateItemCounter();
+          renderHistoryList();
+        }
+      });
+    }
+
+    function renderImageSlots() {
+      const container = document.getElementById('imageSlotsContainer');
+      container.innerHTML = '';
+
+      appData.currentImagesBase64.forEach((base64, index) => {
+        const slot = document.createElement('div');
+        slot.className = 'image-slot';
+        slot.innerHTML = `
+          <img src="${base64}" alt="รูปที่ ${index + 1}">
+          <button type="button" class="btn-remove-img" onclick="removeImage(${index})" title="ลบรูปนี้">&times;</button>
+        `;
+        container.appendChild(slot);
+      });
+
+      if (appData.currentImagesBase64.length < 2) {
+        const addBtn = document.createElement('div');
+        addBtn.className = 'add-image-box';
+        addBtn.onclick = () => document.getElementById('singleImageInput').click();
+
+        const labelText = appData.currentImagesBase64.length === 0 
+          ? 'คลิกเพื่อเพิ่มรูปที่ 1' 
+          : 'เพิ่มรูปที่ 2';
+
+        addBtn.innerHTML = `
+          <div class="plus-icon">+</div>
+          <div class="small fw-bold mt-1">${labelText}</div>
+        `;
+        container.appendChild(addBtn);
+      }
+    }
+
+    function handleSingleImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (appData.currentImagesBase64.length >= 2) {
+        Swal.fire('แจ้งเตือน', 'สามารถอัปโหลดได้สูงสุด 2 รูปเท่านั้นค่ะ', 'warning');
+        event.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          appData.currentImagesBase64.push(dataUrl);
+          
+          renderImageSlots();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+
+    function removeImage(index) {
+      appData.currentImagesBase64.splice(index, 1);
+      renderImageSlots();
+    }
+
+    function validateCurrentForm() {
+      const issue = document.getElementById('issue').value.trim();
+      const area = document.getElementById('area').value.trim();
+      const defectType = document.getElementById('defectType').value;
+      const imagesBase64 = appData.currentImagesBase64;
+
+      if (!issue || !area || !defectType || imagesBase64.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'กรอกข้อมูลไม่ครบ',
+          text: 'กรุณาแนบรูปภาพอย่างน้อย 1 รูป และกรอกรายละเอียดให้ครบทุกช่องค่ะ',
+          confirmButtonText: 'ตกลง'
+        });
+        return null;
+      }
+
+      return { issue, area, defectType, imagesBase64: [...imagesBase64] };
+    }
+
+    function clearReportForm() {
+      document.getElementById('reportForm').reset();
+      appData.currentImagesBase64 = [];
+      renderImageSlots();
+      updateItemCounter();
+    }
+
+    function updateItemCounter() {
+      document.getElementById('itemCounter').innerText = `รายการที่ ${appData.reports.length + 1}`;
+      document.getElementById('savedCount').innerText = appData.reports.length;
+    }
+
+    function addNextReport() {
+      const currentItem = validateCurrentForm();
+      if (!currentItem) return;
+
+      appData.reports.push(currentItem);
+      clearReportForm();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'พักเก็บรายการแล้ว',
+        text: `บันทึกประเด็นที่ ${appData.reports.length} เรียบร้อย กรอกประเด็นถัดไปได้เลยค่ะ`,
+        timer: 1300,
+        showConfirmButton: false
+      });
+    }
+
+    function finishReport() {
+      const issue = document.getElementById('issue').value.trim();
+      const area = document.getElementById('area').value.trim();
+      const defectType = document.getElementById('defectType').value;
+      const imagesBase64 = appData.currentImagesBase64;
+
+      const hasInput = issue || area || defectType || imagesBase64.length > 0;
+
+      if (hasInput || appData.reports.length === 0) {
+        const currentItem = validateCurrentForm();
+        if (!currentItem) return;
+        confirmSubmission([...appData.reports, currentItem]);
+      } else {
+        confirmSubmission(appData.reports);
+      }
+    }
+
+    function confirmSubmission(finalReportList) {
+      Swal.fire({
+        icon: 'question',
+        title: 'ยืนยันการส่งรายงาน',
+        text: `คุณต้องการยืนยันการส่งรายงานใช่หรือไม่? (จำนวน ${finalReportList.length} รายการ)`,
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'แก้ไข',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          submitToGoogleSheet(finalReportList);
+        }
+      });
+    }
+
+    async function submitToGoogleSheet(finalReportList) {
+      Swal.fire({
+        title: 'กำลังส่งข้อมูล...',
+        text: 'ระบบกำลังอัปโหลดรูปภาพและบันทึกข้อมูล กรุณารอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      try {
+        const res = await fetch(GAS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          redirect: 'follow',
+          body: JSON.stringify({
+            action: 'saveReport',
+            setupData: appData.setup,
+            reportList: finalReportList
+          })
+        });
+
+        const response = await res.json();
+
+        if (response.success) {
+          appData.reports = [];
+          closeHistoryModal();
+          clearReportForm();
+          document.getElementById('setupForm').reset();
+
+          Swal.fire({
+            icon: 'success',
+            title: 'ส่งข้อมูลเรียบร้อยค่ะ',
+            confirmButtonText: 'ตกลง'
+          }).then(() => {
+            document.getElementById('page-report').classList.add('hidden');
+            document.getElementById('page-setup').classList.remove('hidden');
+          });
+        } else {
+          Swal.fire('เกิดข้อผิดพลาด', response.message, 'error');
+        }
+      } catch (err) {
+        Swal.fire('เกิดข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: ' + err.message, 'error');
+      }
+    }
+
+    function promptPasswordAndExport() {
+      const month = document.getElementById('exportMonth').value;
+      const year = document.getElementById('exportYear').value;
+      const location = document.getElementById('exportLocation').value;
+
+      if (!month || !year || !location) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'เลือกข้อมูลไม่ครบ',
+          text: 'กรุณาเลือก เดือน, ปี และสถานที่ตรวจ ที่ต้องการ Export ค่ะ',
+          confirmButtonText: 'ตกลง'
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: 'กรุณาใส่รหัสผ่าน Admin',
+        text: 'เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถ Export รายงานได้',
+        input: 'password',
+        inputPlaceholder: 'กรอกรหัสผ่าน...',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#0d6efd'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const password = result.value;
+          
+          if (password !== '0767') {
+            Swal.fire({
+              icon: 'error',
+              title: 'รหัสผ่านไม่ถูกต้อง!',
+              text: 'คุณไม่มีสิทธิ์ในการ Export รายงานนี้ค่ะ',
+              confirmButtonText: 'ตกลง'
+            });
+            return;
+          }
+
+          executeExport({ month, year, location }, password);
+        }
+      });
+    }
+
+    async function executeExport(filterData, password) {
+      Swal.fire({
+        title: 'กำลังสร้างรายงาน...',
+        text: 'ระบบกำลังดึงข้อมูลและแทรกรูปภาพลงตาราง กรุณารอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      try {
+        const response = await fetch(GAS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          redirect: 'follow',
+          body: JSON.stringify({
+            action: 'exportReport',
+            filterData: filterData,
+            password: password
+          })
+        });
+
+        const res = await response.json();
+
+        if (res.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'สร้างรายงานสำเร็จ!',
+            html: `
+              <p class="mb-3">เลือกรูปแบบไฟล์ที่คุณต้องการเปิดหรือดาวน์โหลด:</p>
+              <a href="${res.sheetUrl}" target="_blank" class="btn btn-success w-100 mb-2 py-2 fw-bold">
+                📄 เปิดเป็น Google Sheets (เห็นรูปในตารางทันที)
+              </a>
+              <a href="${res.excelUrl}" target="_blank" class="btn btn-primary w-100 py-2 fw-bold">
+                📥 ดาวน์โหลดเป็นไฟล์ Excel (.xlsx)
+              </a>
+            `,
+            showConfirmButton: true,
+            confirmButtonText: 'ปิดหน้าต่าง'
+          });
+        } else {
+          Swal.fire('ไม่สามารถ Export ได้', res.message, 'warning');
+        }
+      } catch (err) {
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างรายงานได้: ' + err.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
